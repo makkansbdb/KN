@@ -128,6 +128,24 @@ sales / admin sales (pantau, bagikan kode pickup ke pelanggan).
   `RoleAccountsList` dengan `RoleDangerDialog` kind "move"; editor tetap terbuka & disegarkan setelah pindah.
 - Testing agent iterasi 37: backend 11/11, frontend 100%.
 
+## Design Studio — Nilai hanya saat ACC · HOLD · Label Proofing · Riwayat detail (2026-09-18, repo pandeyoga/KNHOST)
+Problem statement: lanjutkan ke Desainer — (1) point hanya di akhir ketika ACC; (2) desain ACC bisa di-HOLD → tidak bisa masuk proofing R&D,
+label jelas + filter; label proofing (on progress / finished) + info master produk; navigasi cepat tanggal; (3) history lebih detail.
+Pilihan user: hapus semua penilaian kecuali dialog ACC; hold oleh admin/manager (izin `rnd.hold`, dapat diatur di matriks akses);
+acuan tanggal ACC & update terakhir (bisa dipilih); riwayat lengkap (diff field, berkas, hold, nilai, proofing & master produk) + filter jenis; seed demo repo.
+- Backend: `design_studio_service` — `transition` hanya menyimpan nilai pada `approve` (revisi mengabaikan score), `activate` ditolak saat hold;
+  `set_hold`/`release` (field `on_hold`, `hold`, `hold_history`, event `hold`/`release_hold`); `attach_proofing` (batch md_samples/md_specs/products →
+  `proofing{state none|in_progress|finished|master, label, detail, samples[], specs[], master_product}`); `log_external` (peristiwa lintas modul).
+  `design_gallery_service` — `update_gallery` menulis event `updated` + `changes[{field,label,from,to}]`, `delete_file` → `file_deleted`, unggah colorway ikut timeline,
+  filter `on_hold`. `rnd_sample_service` — `_assert_design_not_held` (proofing ditolak saat HOLD) + hook `proofing_requested/finished/decided`.
+  `rnd_spec_service` — hook `spec_linked`, `master_product_created`, `master_product_released`. Router: `POST /design-gallery/{id}/lifecycle/hold|release-hold`
+  (izin `rnd.hold`), `GET /design-gallery/{id}/history?kind=`; endpoint `/versions/{v}/score` DIHAPUS. `permissions_config`: `rnd.hold` admin+manager (merge otomatis saat restart).
+- Frontend: `RndDesignsView` (KPI hold/proofing/master klik-saring, filter `rnd-filter-hold|proofing`, `DateQuickNav`, kartu ber-lencana hold/proofing/master/tanggal),
+  `DesignDetailPage` (lencana + banner hold, tab Proofing R&D `ProofingPanel`, tab Riwayat `HistoryPanel` menggantikan TimelinePanel), `LifecycleActions`
+  (hold/lepas hold via `canHold`, nilai hanya di dialog ACC, revisi tanpa nilai), `VersionsPanel` tanpa tombol nilai, `DesignBadges`, `SampleFormModal` menandai desain HOLD.
+- Seed demo: `scripts/seed_design_hold_proofing_demo.py`. Testing agent iterasi 39: backend 14/14, frontend 100%.
+
+
 ## Backlog
 - P2 (Akses): ganti `window.confirm` hapus/reset peran dengan modal in-app — SELESAI 2026-06 (`RoleDangerDialog`).
 - P2 (Akses): daftar akun pemakai peran di editor — SELESAI 2026-06 (`RoleAccountsList`, `accounts[]` di GET /api/access/roles/{id}).
